@@ -18,6 +18,9 @@
  */
 package tk.year.opencv.demo.examples;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.google.common.io.Resources;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -70,11 +73,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 
 public class FilterDemo extends JFrame {
 
     private static final List<String> IMAGE_EXTENSIONS = Arrays.asList(".png", ".jpg", ".jpeg", ".bmp");
+
     private final JFileChooser fileChooser;
 
     static {
@@ -82,6 +88,13 @@ public class FilterDemo extends JFrame {
     }
 
     private Thread cameraThread;
+
+    private static final Function<Object,String> OBJECT_STRING_FUNCTION = new Function<Object, String>() {
+        @Override
+        public String apply(final Object o) {
+            return String.valueOf(o);
+        }
+    };
 
     public FilterDemo() {
         super("OpenCV Filter Demo");
@@ -294,6 +307,15 @@ public class FilterDemo extends JFrame {
             c.gridy = 1;
             add(filterPane, c);
 
+            final Properties props = new Properties();
+            try {
+                props.load(Resources.getResource("filters.properties").openStream());
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to load list of filters.", e);
+            }
+
+            final String[] filterClassNames = Collections2.transform(props.values(), OBJECT_STRING_FUNCTION).toArray(new String[props.size()]);
+
             btnAdd.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(final ActionEvent e) {
@@ -303,15 +325,7 @@ public class FilterDemo extends JFrame {
                             "Add filter",
                             JOptionPane.PLAIN_MESSAGE,
                             null,
-                            new String[]{
-                                    Dilate.class.getName(),
-                                    Erode.class.getName(),
-                                    Grayscale.class.getName(),
-                                    Threshold.class.getName(),
-                                    Contrast.class.getName(),
-                                    FindContours.class.getName(),
-                                    MorphologyEx.class.getName(),
-                            },
+                            filterClassNames,
                             "ham");
 
                     if (klass != null) {
